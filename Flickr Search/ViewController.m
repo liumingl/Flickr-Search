@@ -7,12 +7,18 @@
 //
 
 #import "ViewController.h"
+#import "Flickr.h"
+#import "FlickrPhoto.h"
 
 @interface ViewController ()<UITextFieldDelegate>
 
 @property (nonatomic, weak) IBOutlet UIToolbar *toolbar;
 @property (nonatomic, weak) IBOutlet UIBarButtonItem *shareButton;
 @property (nonatomic, weak) IBOutlet UITextField *textField;
+
+@property (nonatomic, strong) NSMutableDictionary *searchResults;
+@property (nonatomic, strong) NSMutableArray *searches;
+@property (nonatomic, strong) Flickr *flickr;
 
 - (IBAction)shareButtonTapped:(id)sender;
 
@@ -38,6 +44,10 @@
     
     UIImage *textFieldImage = [[UIImage imageNamed:@"search_field"] resizableImageWithCapInsets:UIEdgeInsetsMake(10, 10, 10, 10)];
     [self.textField setBackground:textFieldImage];
+    
+    self.searches = [@[]mutableCopy];
+    self.searchResults = [@{}mutableCopy];
+    self.flickr = [[Flickr alloc] init];
 }
 
 - (void)didReceiveMemoryWarning
@@ -49,6 +59,30 @@
 -(void)shareButtonTapped:(id)sender
 {
     
+}
+
+#pragma mark - UITextFieldDelegate methods
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    [self.flickr searchFlickrForTerm:textField.text completionBlock:^(NSString *searchTerm, NSArray *results, NSError *error) {
+        if (results && [results count] > 0) {
+            if (![self.searches containsObject:searchTerm]) {
+                NSLog(@"Found %d photos matching %@", results.count, searchTerm);
+                [self.searches insertObject:searchTerm atIndex:0];
+                self.searchResults[searchTerm] = results;
+            }
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+            });
+        }else{
+            NSLog(@"Error searching Flickr: %@", error.localizedDescription);
+        }
+    }];
+    
+    [textField resignFirstResponder];
+    return YES;
 }
 
 @end
